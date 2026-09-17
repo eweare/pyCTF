@@ -426,65 +426,55 @@ def  _test_zer( filepath ):
 
 	ax[0].set_yticks( ticks, labels=labels)
 
-	# then fit hyperbola to get equation for measuring defocus.
+	# Then fit to hyperbola to get equation for measuring defocus.
 	def hyperbola( x, a, b, c, d ):
-		y = (a/(b*x)) + c
+		y = (a/(b*x)) + x*c + d
 		return y
 
-	
-	overfocus = (output[:, 0] > 10)
-	underfocus = (output[:, 0] < -10)
+	# Filter based on frequency
+	step = np.linspace(-625,625,200)
+	overfocus = (step > 50)
+	underfocus = (step < -50)
 
-	print(output[underfocus])
+	#print( output[:,0][underfocus] )
 
-	k = 100
-	temp=output[0:k,:]
-
-	ydata = range(-k, -10)
 
 	from scipy.optimize import curve_fit
 	popt, pcov = curve_fit( hyperbola,
 							output[:,0][underfocus],
-							ydata,
+							step[underfocus],
 							maxfev=5000,
 							nan_policy='omit' )
 
-	ax[1].plot( output[:,0],
-				range(-100, 100),
+	ax[1].plot( output[:,0][underfocus],
+				step[underfocus],
 				'x', color='k',
 				label='n=|1|')
-	ax[1].plot(hyperbola(range(0, 90), *popt), 'g--', label='best fit' )
+	ax[1].plot(hyperbola(range(0, 40), *popt), 'g--', label='underfocus' )
 	ax[1].set_title('Fitted minima')
 
+	
 	popt, pcov = curve_fit( hyperbola,
-							temp[:,0],
-							ydata,
+							output[:,0][overfocus],
+							step[overfocus],
 							maxfev=5000,
 							nan_policy='omit' )
 
-	ax[1].plot( output[:,0],
-				range(-100, 100),
-				'x', color='k',
+	ax[1].plot( output[:,0][overfocus],
+				step[overfocus],
+				'x', color='g',
 				label='n=|1|')
-	ax[1].plot(hyperbola(range(0, k), *popt), 'g--', label='best fit' )
-	ax[1].set_title('Fitted minima')		
+	ax[1].plot(hyperbola(range(0, 40), *popt), 'r--', label='overfocus' )
+	ax[1].set_title('Fitted minima')	
+	ax[1].axhline(0, c='k',ls='-',alpha=0.5)	
 	
-	
-	'''
-	temp=output[k:200,:]
-	ydata = range(0, k)
-
-	popt, pcov = curve_fit( hyperbola,
-							temp[:,0],
-							ydata,
-							maxfev=5000,
-							nan_policy='omit' )
-
-	ax[1].plot(hyperbola(range(0, k), *popt), 'r--', label='best fit' )
-	ax[1].set_ylim([-100, 100])
+	ax[1].set_ylim([-650, 650])
 	ax[1].set_xlim([0, 40])
-	'''
+
+	ax[1].legend()
 	
+	
+
 
 	return
 
