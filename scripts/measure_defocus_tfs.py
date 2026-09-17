@@ -1,5 +1,5 @@
 '''
-Script to measure the 
+Script to measure the defocus at each step in a through focus series.
 '''
 
 # Timing variables for testing
@@ -19,9 +19,10 @@ def hyperbola( x, a, b, c, d ):
 	y = (a/(b*x)) + x*c + d
 	return y
 
+
 # Load data and set variables.
-yscale = 6.25
-xscale = 0.06632
+yscale = 6.25 #in nm
+xscale = 0.06632 # in nm-1
 path = 'C:\\Users\\pczbw2\\Desktop\\git\\pyCTF\\assets\\'
 
 arr = np.load( path+'\\wip\\TFS.npy' )
@@ -30,7 +31,7 @@ arr = np.rot90(arr)
 arr = arr[:, 1:50]
 
 
-# Apply Gaussian blur.
+# Apply Gaussian blur to TFS.
 arr = gaussian(arr, sigma=1)
 
 
@@ -54,31 +55,45 @@ for n in range(arr.shape[0]):
 # Replace all zeros with NaN. 
 output[output == 0] = np.nan
 
+def linear(x, m, c):
+	y = m*x + c
+	return y
 
-# Then fit to hyperbola to get equation for measuring defocus.
+# Determine Cs and delta-f.
+
+y_min = [0,0,0,0]
+for n in (0, 1, 2, 3):
+	y_min[n] = (n+1)/output[0][n]**2
+
+
+popt4, pcov4 = curve_fit( linear,
+						(output[0,0:4])**2,
+						y_min,
+						maxfev=5000,
+						nan_policy='omit' )
+
+	#results, Cs, defocus = Zeros.fit_numpy( output[0,0:4]**2, y_min, lamb=pyCTF.utils.kv_to_lamb(200) )
+	#print(str(Cs), str(defocus))
+#except:
+#	print('Error: could not determine defocus.')
+
+
+# Then fit to hyperbola.
 # Filter based on frequency
-step = np.linspace(-625,625,200)
+step = np.linspace((-yscale*arr.shape[0]),
+					yscale*arr.shape[0],
+					arr.shape[0])
+
+
+# Filter the region near zero focus.
 overfocus = (step > 50)
 underfocus = (step < -50)
 
-'''
-popt1, pcov1 = curve_fit( hyperbola,
-						output[:,0][underfocus],
-						step[underfocus],
-						maxfev=5000,
-						nan_policy='omit' )
 
-popt2, pcov2 = curve_fit( hyperbola,
-						output[:,0][overfocus],
-						step[overfocus],
-						maxfev=5000,
-						nan_policy='omit' )
-'''
-
-
-# Fit n/nu**2 to hyperbola
+# Params stored as overfocus, underfocus.
 fitparams = [[],[],[],[]]
 
+# Fit the hyperbola.
 for n in (1, 2, 3, 4):
 	popt1, pcov1 = curve_fit( hyperbola,
 							(output[:,n-1][overfocus])**2,
@@ -91,6 +106,7 @@ for n in (1, 2, 3, 4):
 							maxfev=5000,
 							nan_policy='omit' )
 	fitparams[n-1] = popt1, pcov1, popt2, pcov2
+
 
 
 # Plot results.
@@ -142,34 +158,23 @@ ax[0].set_yticks( ticks, labels=labels)
 ax[0].set_xlabel('Frequency / nm$^{-1}$')
 ax[0].set_ylabel('Defocus / nm')
 
-# Axis 2.
-# Plot underfocus arc.
+
+# Plot hyperbola.
+colours = ('k','y','m','c')
+
+for n in (0, 1, 2, 3):
+	ax[1].plot(hyperbola(range(0, 2000),
+				*fitparams[n][0]),
+				c=colours[n],
+				ls='-',
+				label='overfocus' )
+	ax[1].plot(hyperbola(range(0, 2000),
+				*fitparams[n][2]),
+				c=colours[n],
+				ls='-',
+				label='underfocus' )
 
 '''
-ax[1].plot( output[:,0][underfocus],
-			step[underfocus],
-			'x', color='k',
-			label='n=|1|')
-ax[1].plot(hyperbola(range(0, len(arr)), *popt1), 'g--', label='underfocus' )
-
-
-# Plot overfocus arc.
-ax[1].plot( output[:,0][overfocus],
-			step[overfocus],
-			'x', color='g',
-			label='n=|1|')
-ax[1].plot(hyperbola(range(0, len(arr)), *popt2), 'r--', label='overfocus' )
-	
-# Axis settings.
-ax[1].set_title('Fitted minima')
-ax[1].axhline(0, c='k',ls='-',alpha=0.5)	
-ax[1].set_ylim([-650, 650])
-ax[1].set_xlim([0, 40])
-ax[1].legend()
-'''
-
-colours = ('k','c', 'm', 'y')
-
 for n, m in zip((1, 2, 3, 4), colours):
 	ax[1].plot( output[:,n-1][overfocus]**2, n/(output[:,n-1][overfocus])**2, 
 		'x', color=m,
@@ -177,16 +182,7 @@ for n, m in zip((1, 2, 3, 4), colours):
 	ax[1].plot( output[:,n-1][underfocus]**2, -n/(output[:,n-1][underfocus])**2, 
 		'x', color=m,
 		label='n='+str(-n))
-
-for n in (0, 1, 2, 3):
-	ax[1].plot(hyperbola(range(0, 2000),
-				*fitparams[n][0]),
-				'g--',
-				label='overfocus' )
-	ax[1].plot(hyperbola(range(0, 2000),
-				*fitparams[n][2]),
-				'r--',
-				label='underfocus' )
+'''
 
 ax[1].set_ylim([-0.015, 0.015])
 ax[1].set_xlim([0, 2000])
@@ -195,24 +191,15 @@ ax[1].set_xlim([0, 2000])
 
 ax[1].set_xlabel('${nu}^2$')
 ax[1].set_ylabel('$n/{nu}^2$')
-
+ax[1].grid()
 ax[1].set_title('Fitted CTF minima')
 
-# Process data for graph.
+ax[1].plot(linear(range(0, 2000),
+				*popt4),
+				c='r',
+				ls='--',
+				label='underfocus' )
+ax[1].plot( (output[0,0:4])**2, y_min,'x',
+				c='k' )
 
-'''
-processed = np.zeros((200, 4))
-
-processed[:, 0][underfocus] = -1
-processed[:, 0][overfocus] = 1
-processed[:, 1][underfocus] = -2
-processed[:, 1][overfocus] = 2
-processed[:, 2][underfocus] = -3
-processed[:, 2][overfocus] = 3
-processed[:, 3][underfocus] = -4
-processed[:, 3][overfocus] = 4
-
-#for n in range(0, 199):
-#	ax[2].plot( output[n,0:3]**2, processed[n,0:3]/output[n,0:3]**2, 'x' )
-'''
 plt.show()

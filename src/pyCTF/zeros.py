@@ -13,6 +13,8 @@ import pyCTF.utils
 from pyCTF.utils import gradient_simple
 from pyCTF.utils import calc_cs_and_defocus
 
+#import lmfit
+
 
 class indicieError( Exception ):
     '''
