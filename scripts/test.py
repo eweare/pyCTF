@@ -100,9 +100,15 @@ def _test_defocus( filepath ):
 	                     underfocus=True,# False for overfocus.
 	                     xlim=[0.75,3.0],# Exclude all minima outside this range.
 	                     start=2 )# First index for fitting.
+
 	print_Cs_results( CTF, verbose=True )
 
+	fig, ax = plt.subplots()
+
+	ax.plot(CTF.cropped_frequency, CTF.smoothed_profile)
+
 	plt.show()
+
 	return
 
 
@@ -250,7 +256,7 @@ path = 'C:\\Users\\pczbw2\\Desktop\\git\\pyCTF\\assets\\'
 #_test_1D_sim()
 #_test_2D_sim()
 #_test_show_image( path+'example_image.tif' )
-#_test_defocus( path + 'example_CTF.tif' )
+_test_defocus( path + 'example_CTF.tif' )
 #_test_profiles( path + 'example_CTF.tif' )
 #_test_background_subtraction( path+'example_CTF.tif' )
 #_test_astig( 'assets\\example_astigmatism.tif' )

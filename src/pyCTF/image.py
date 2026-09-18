@@ -2,6 +2,8 @@
 A class to contain contrast transfer functions (CTFs).
 '''
 
+# TO DO: rewrite cropping to apply a binary mask to the data,
+#  rather than making a new array as currently.
 
 import numpy as np
 
@@ -331,8 +333,7 @@ def _find_zeros( ElectronImage, **kwargs):
     return indicies_min, y_min, x_min, minima, maxima
 
 
-def print_Cs_results( ElectronImage, **kwargs ):
-    verbose = kwargs.get( 'verbose', True)
+def print_Cs_results( ElectronImage, verbose=True ):
     Zeros.plot_figure( ElectronImage.cropped_frequency, 
                         ElectronImage.smoothed_profile, 
                         ElectronImage.minima, 
@@ -414,5 +415,7 @@ def measure_defocus( ElectronImage, **kwargs ):
 
     ElectronImage.results,\
     ElectronImage.Cs,\
-    ElectronImage.defocus = Zeros.fit( ElectronImage.x_min, ElectronImage.y_min, ElectronImage.lamb )
+    ElectronImage.defocus = Zeros.fit( ElectronImage.x_min,
+                                    ElectronImage.y_min,
+                                    ElectronImage.lamb )
     return
