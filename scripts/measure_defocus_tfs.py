@@ -1,7 +1,6 @@
 '''
 Script to measure the defocus at each step in a through focus series.
 '''
-
 # Timing variables for testing
 import time
 import numpy as np
@@ -93,20 +92,22 @@ underfocus = (step < -50)
 # Params stored as overfocus, underfocus.
 fitparams = [[],[],[],[]]
 
+
 # Fit the hyperbola.
+'''
 for n in (1, 2, 3, 4):
 	popt1, pcov1 = curve_fit( hyperbola,
-							(output[:,n-1][overfocus])**2,
-							n/output[:,n-1][overfocus]**2,
-							maxfev=5000,
-							nan_policy='omit' )
+				(output[:,n-1][overfocus])**2,
+				n/output[:,n-1][overfocus]**2,
+				maxfev=5000,
+				nan_policy='omit' )
 	popt2, pcov2 = curve_fit( hyperbola,
-							(output[:,n-1][underfocus])**2,
-							-n/output[:,n-1][underfocus]**2,
-							maxfev=5000,
-							nan_policy='omit' )
+				(output[:,n-1][underfocus])**2,
+				-n/output[:,n-1][underfocus]**2,
+				maxfev=5000,
+				nan_policy='omit' )
 	fitparams[n-1] = popt1, pcov1, popt2, pcov2
-
+'''
 
 
 # Plot results.
@@ -162,6 +163,7 @@ ax[0].set_ylabel('Defocus / nm')
 # Plot hyperbola.
 colours = ('k','y','m','c')
 
+'''
 for n in (0, 1, 2, 3):
 	ax[1].plot(hyperbola(range(0, 2000),
 				*fitparams[n][0]),
@@ -173,7 +175,7 @@ for n in (0, 1, 2, 3):
 				c=colours[n],
 				ls='-',
 				label='underfocus' )
-
+'''
 '''
 for n, m in zip((1, 2, 3, 4), colours):
 	ax[1].plot( output[:,n-1][overfocus]**2, n/(output[:,n-1][overfocus])**2, 

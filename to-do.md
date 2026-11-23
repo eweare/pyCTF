@@ -1,0 +1,3 @@
+- Use Tifffile to read/write images
+- Clean up CTF class
+- 
